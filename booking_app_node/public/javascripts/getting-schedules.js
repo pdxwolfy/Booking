@@ -1,29 +1,79 @@
-const UI = "#main";
-const URL = "http://greywolf:3000";
-const GET_SCHEDULES = "/api/schedules";
-const GET_STAFF = "/api/staff_members";
-const TIMEOUT_PERIOD = 3000;
-const TIMEOUT_MESSAGE = "Timeout! Please try again.";
-const ALL_DONE = "All done.";
-const NO_SCHEDULES = "No schedules available for booking!";
-const ERROR_MESSAGE = "An error occured!";
-
 // eslint-disable-next-line max-lines-per-function
 document.addEventListener("DOMContentLoaded", () => {
-  let ui = document.querySelector(UI);
+  const UI = "#main";
+  const URL = "http://greywolf:3000";
+  const GET_SCHEDULES = "/api/schedules";
+  const GET_STAFF = "/api/staff_members";
+  const TIMEOUT_PERIOD = 3000;
+  const TIMEOUT_MESSAGE = "Timeout! Please try again.";
+  const ALL_DONE = "All done.";
+  const NO_SCHEDULES = "No schedules available for booking!";
+  const ERROR_MESSAGE = "An error occured!";
+
+  let ui = {
+    location: document.querySelector(UI),
+
+    clear() {
+      let ui = this.location;
+      while (ui.hasChildNodes()) {
+        this.clearNode(ui.firstChild);
+      }
+    },
+
+    clearNode(node) {
+      while (node.hasChildNodes()) {
+        this.clear(node.firstChild);
+      }
+
+      node.parentNode.removeChild(node);
+    },
+
+    done() {
+      this.renderLine(ALL_DONE);
+    },
+
+    render(schedules) {
+      this.clear();
+      this.renderSchedules(schedules);
+    },
+
+    renderLine(line) {
+      let item = document.createElement("p");
+      item.appendChild(document.createTextNode(line));
+      this.location.appendChild(item);
+    },
+
+    renderSchedules(schedules) {
+      schedules.forEach((schedule) => this.renderLine(schedule));
+    },
+
+    timeout() {
+      this.renderLine(TIMEOUT_MESSAGE);
+      this.done();
+    },
+  };
+
+  let store = {
+    bookings: [],
+
+    addBooking(bookingText) {
+      this.bookings.push(bookingText);
+    },
+
+    clear() {
+      this.bookings = [];
+    },
+
+    getBookings() {
+      return this.bookings.slice();
+    },
+  };
 
   const gotError = () => alert(ERROR_MESSAGE);
 
-  const addTextToUi = (text) => {
-    let uiItem = document.createElement("p");
-    uiItem.appendChild(document.createTextNode(text));
-    ui.appendChild(uiItem);
-  };
-
-  const clearUi = () => {
-    while (ui.lastChild) {
-      ui.removeChild(ui.lastChild);
-    }
+  const reset = () => {
+    store.clear();
+    ui.clear();
   };
 
   const tallyResults = (schedules, staffMembers) => {
@@ -32,27 +82,24 @@ document.addEventListener("DOMContentLoaded", () => {
         return schedule.staff_id === staff.id;
       });
 
-      addTextToUi(`staff ${staff.id}: ${staffSchedules.length}`);
+      store.addBooking(`staff ${staff.id}: ${staffSchedules.length}`);
     });
-  };
-
-  const done = () => addTextToUi(ALL_DONE);
-
-  const timeout = () => {
-    addTextToUi(TIMEOUT_MESSAGE);
-    done();
   };
 
   const requestStaffSchedules = (schedules) => {
     if (schedules.length === 0) {
-      addTextToUi(NO_SCHEDULES);
+      store.addBooking(NO_SCHEDULES);
       return;
     }
 
     let xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", () => tallyResults(schedules, xhr.response));
+    xhr.addEventListener("load", () => {
+      tallyResults(schedules, xhr.response);
+      ui.render(store.getBookings());
+    });
+
     xhr.addEventListener("error", gotError);
-    xhr.addEventListener("loadend", done);
+    xhr.addEventListener("loadend", ui.done.bind(ui));
 
     xhr.open("GET", `${URL}${GET_STAFF}`);
     xhr.responseType = "json";
@@ -60,10 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const requestSchedules = () => {
+    reset();
+
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => requestStaffSchedules(xhr.response));
     xhr.addEventListener("error", gotError);
-    xhr.addEventListener("timeout", timeout);
+    xhr.addEventListener("timeout", ui.timeout.bind(ui));
 
     xhr.open("GET", `${URL}${GET_SCHEDULES}`);
     xhr.timeout = TIMEOUT_PERIOD;
@@ -71,6 +120,5 @@ document.addEventListener("DOMContentLoaded", () => {
     xhr.send();
   };
 
-  clearUi();
   requestSchedules();
 });
