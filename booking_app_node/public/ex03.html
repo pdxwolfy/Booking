@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+      body {
+        font-size: 1.5rem;
+      }
+
+      dt {
+        color: red;
+        float: left;
+        font-weight: bold;
+        margin: auto 1rem 1rem 5rem;
+      }
+
+      dl {
+        border: 1px solid green;
+        padding: 1rem;
+        margin: 0;
+      }
+
+      dd:after {
+        clear: both;
+        content: " ";
+        display: block;
+      }
+
+      fieldset {
+        border: 5px double gray;
+        margin: 0;
+        padding: 0;
+      }
+
+      form {
+        padding: 0;
+      }
+
+      input[type="submit"] {
+        background-color: red;
+        border: 5px solid hidden;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+        font-size: 1.25rem;
+        height: 4rem;
+        margin-top: 1rem;
+        width: 6rem;
+      }
+
+      input[type="submit"]:focus,
+      input[type="submit"]:hover {
+        border: 5px solid darkcyan;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="main">
+      <form method="post" action="">
+        <fieldset>
+          <dl>
+            <dt><label for="email">Email:</label></dt>
+            <dd><input type="text" name="email" id="email" /></dd>
+
+            <dt><label for="name">Name:</label></dt>
+            <dd><input type="text" name="name" id="name" /></dd>
+          </dl>
+        </fieldset>
+
+        <input type="submit" value="Submit" />
+      </form>
+    </div>
+    <script src="javascripts/adding-staff.js"></script>
+  </body>
+</html>
