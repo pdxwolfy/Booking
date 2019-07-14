@@ -1,7 +1,15 @@
+"use strict";
+
+// eslint-disable-next-line max-lines-per-function
 document.addEventListener("DOMContentLoaded", () => {
   const URL = "http://greywolf:3000";
   const ADD_STAFF_MEMBER = "/api/staff_members";
   const ERROR_MESSAGE = "An error occured!";
+  const VALID_EMAIL_PATTERN = /^.+@.+$/;
+  const REQUIRED_ENTRIES = {
+    email: "Your email address is required.",
+    name:  "Your name is required.",
+  };
 
   const FORM = document.querySelector("form");
   const FIELDS = {
@@ -12,6 +20,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const reset = function() {
     FIELDS.email.value = "";
     FIELDS.name.value  = "";
+  };
+
+  const missingData = function() {
+    const entries = Object.entries(REQUIRED_ENTRIES);
+    for (let index = 0; index < entries.length; index++) {
+      let [ name, errorMessage ] = entries[index];
+      if (FIELDS[name].value.length === 0) {
+        return errorMessage;
+      }
+    }
+
+    return null;
+  };
+
+  const validateEmail = function() {
+    if (VALID_EMAIL_PATTERN.test(FIELDS.email.value)) {
+      return null;
+    }
+
+    return "Invalid email address.";
   };
 
   const getFormDataAsJson = function() {
@@ -32,21 +60,27 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      let data  = JSON.parse(xhr.response);
       let email = FIELDS.email.value;
       let name  = FIELDS.name.value;
-      alert(`Created: Email: ${email} Name: ${name} Id: ${data.id}`);
+      alert(`Got it: Email: ${email} Name: ${name} Id: ${xhr.response.id}`);
       reset();
     });
 
     xhr.open("POST", `${URL}${ADD_STAFF_MEMBER}`);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.addEventListener("error", () => alert(ERROR_MESSAGE));
+    xhr.responseType = "json";
     xhr.send(getFormDataAsJson());
   };
 
   FORM.addEventListener("submit", (event) => {
     event.preventDefault();
-    addStaffMember();
+
+    let error = missingData() || validateEmail();
+    if (error) {
+      alert(error);
+    } else {
+      addStaffMember();
+    }
   });
 });
