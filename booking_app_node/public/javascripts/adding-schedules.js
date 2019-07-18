@@ -1,272 +1,287 @@
 // eslint-disable-next-line max-lines-per-function
 document.addEventListener("DOMContentLoaded", () => {
+  const ADD_MORE_SCHEDULES = "Add more schedules";
+  const ERROR_MESSAGE = "An error occured!";
+  const FORM = "form";
+  const ID_ADD_SCHEDULE = "add-schedule";
+  const SCHEDULES = "/api/schedules";
+  const STAFF_MEMBETS = "/api/staff_members";
+  const SUBMIT = "Submit";
+  const TIMEOUT_MESSAGE = "Timeout! Please try again.";
+  const TIMEOUT_PERIOD = 3000;
   const UI = "#main";
   const URL = "http://greywolf:3000";
-  const ADD_MORE_SCHEDULES = "Add more schedules";
-  const SCHEDULES = "/api/schedules";
-  const SUBMIT = "Submit";
-  const ERROR_MESSAGE = "An error occured!";
-
-  // let store = {
-  //   schedules: [],
-  //
-  //   addBooking(bookingText) {
-  //     this.bookings.push(bookingText);
-  //   },
-  //
-  //   clear() {
-  //     this.bookings = [];
-  //   },
-  //
-  //   getSchedules() {
-  //     return this.bookings.slice();
-  //   },
-  // };
-
-  // class Schedule {
-  //   /* eslint-disable camelcase */
-  //   constructor({ id, staff_id, student_email, date, time }) {
-  //     this.id           = id;
-  //     this.staffId      = staff_id;
-  //     this.studentEmail = student_email;
-  //     this.date         = date;
-  //     this.time         = time;
-  //   }
-  //   /* eslint-enable camelcase */
-  // }
 
   let app = {
+    form:      null,
     schedules: [],
+    submit:    null,
     where:     document.querySelector(UI),
 
-    init() {
-      this.renderAddScheduleButton();
-      this.renderSubmitButton();
+    init(staffMembers) {
+      let xhr = new XMLHttpRequest();
+      xhr.addEventListener("load", (_event) => {
+        this.staffMembers = JSON.parse(xhr.request);
+        this.renderAddScheduleButton();
+        this.renderForm();
+        this.renderSubmitButton();
+      });
+
+      xhr.addEventListener("error", this.gotError.bind(this));
+
+      xhr.open("GET", `${URL}${GET_STAFF}`);
+      xhr.responseType = "json";
+      xhr.send();
     },
 
     renderAddScheduleButton() {
-      let button = this.createButton(ADD_MORE_SCHEDULES);
-      button.addEventListener("click", this.renderScheduleForm.bind(this));
-      this.renderButton(button);
+      let button = this.createButton(
+        ADD_MORE_SCHEDULES,
+        {
+          id: ID_ADD_SCHEDULE,
+        },
+      );
+
+      button.addEventListener("click", this.renderSchedule.bind(this));
+      this.where.appendChild(button);
+      return this;
+    },
+
+    renderForm() {
+      this.form = this.createElement(
+        FORM,
+        {
+          action: "#",
+          method: "post",
+        }
+      );
+
+      this.where.appendChild(this.form);
+      return this;
     },
 
     renderSubmitButton() {
-      let button = this.createButton(SUBMIT);
-      button.addEventListener("click", this.handleSubmit.bind(this));
-      button.type = "submit";
-      this.renderButton(button);
+      this.submit = this.createButton(SUBMIT);
+      this.submit.addEventListener("click", this.handleSubmit.bind(this));
+      this.submit.type = "submit";
+      this.form.appendChild(this.submit);
+      return this;
     },
 
-    createButton(label) {
-      let button = document.createElement("button");
+    createButton(label, ...options) {
+      let button = this.createElement("button", ...options);
       let text = document.createTextNode(label);
-      return button.appendChild(text);
-    },
-
-    renderButton(button) {
-      return this.where.appendChild(button);
-    },
-
-    createScheduleForm() {
-      let form = this.createElement("form");
-      let id = this.schedules.length + 1;
-      form.id = `schedule-${id}`;
-      form.action = "#";
-      form.method = "post";
-      return form;
+      button.appendChild(text);
+      return button;
     },
 
     createElement(tagName, ...options) {
-      let tag = document.createElement(tagName);
-      tag = { ...tag, ...options };
-      return tag;
+      let element = document.createElement(tagName);
+      return Object.assign(element, ...options);
+    },
+
+    //...
+
+    renderSchedule() {
+      let schedule = this.createSchedule();
+      this.schedules.push(schedule);
+      this.submit.insertAdjacentElement("beforebegin", schedule);
+      return this;
+    },
+
+    createSchedule() {
+      let fieldset = this.createFieldSet();
+      let id = this.schedules.length + 1;
+      let legend = this.createLegend(`Schedule ${id}`);
+      let dl = this.createInputs(id);
+      fieldset.appendChild(legend);
+      fieldset.appendChild(dl);
+      return fieldset;
     },
 
     createFieldSet() {
       return this.createElement("fieldset");
     },
 
-    createLabel(text, forName) {
-      let label = this.createElement("label", { for: forName });
-      return label.appendChild(document.createTextNode(`${text} :`));
+    createLegend(text) {
+      let legend = this.createElement("legend");
+      legend.appendChild(document.createTextNode(text));
+      return legend;
     },
 
-    createOption(id, name) {
-      let option = this.createElement("option", { value: id });
-      return option.appendChild(document.createTextNode(name));
+    createInputs(id) {
+      let dl = this.createElement("dl");
+
+      let widget = this.createStaffNameWidget(`staffName-${id}`);
+      this.appendLabelAndWidget(dl, "Staff Name", widget);
+
+      widget = this.createDateWidget(`date-${id}`);
+      this.appendLabelAndWidget(dl, "Date", widget);
+
+      widget = this.createTimeWidget(`time-${id}`);
+      this.appendLabelAndWidget(dl, "Time", widget);
+
+      return dl;
     },
 
-    createStaffNameInput(name) {
+    createLabel(label, forName) {
+      let labelElement = this.createElement("label", { for: forName });
+      labelElement.appendChild(document.createTextNode(`${label} :`));
+      return labelElement;
+    },
+
+    createDtDd(which, element) {
+      let dtdd = document.createElement(which);
+      dtdd.appendChild(element);
+      return dtdd;
+    },
+
+    createDt(element) {
+      return this.createDtDd("dt", element);
+    },
+
+    createDd(element) {
+      return this.createDtDd("dd", element);
+    },
+
+    appendLabelAndWidget(parent, label, widget) {
+      let dt = this.createElement("dt");
+      dt.appendChild(this.createLabel(label, widget.name));
+
+      let dd = this.createElement("dd");
+      dd.appendChild(widget);
+
+      parent.appendChild(dt);
+      parent.appendChild(dd);
+      return this;
+    },
+
+    createStaffNameWidget(name) {
       let select = this.createElement("select", { name: name });
       select.appendChild(this.createOption(1, "First Prof"));
       select.appendChild(this.createOption(2, "Second Prof"));
       return select;
     },
 
-    createDateInput(name) {
+    createOption(id, name) {
+      let option = this.createElement("option", { value: id });
+      option.appendChild(document.createTextNode(name));
+      return option;
+    },
+
+    createDateWidget(name) {
       return this.createElement(
         "input",
         {
           name,
-          type:      "date",
-          required:  true,
-          placehold: "mm-dd-yyyy",
+          type:        "text",
+          placeholder: "mm-dd-yy",
         }
       );
     },
 
-    createTimeInput(name) {
+    createTimeWidget(name) {
       return this.createElement(
         "input",
         {
           name,
-          type:      "date",
-          required:  true,
-          placehold: "hh:mm",
+          type:        "text",
+          placeholder: "hh:mm",
         }
       );
     },
 
-    createFieldInputs() {
-      let dl = this.createElement("dl");
-      dl.appendChild(this.createLabel("StaffName", "staffName"));
-      dl.appendChild(this.createStaffNameInput("staffName"));
-      dl.appendChild(this.createLabel("Date", "date"));
-      dl.appendChild(this.createDateInput("date"));
-      dl.appendChild(this.createLabel("Time", "time"));
-      dl.appendChild(this.createTimeInput("time"));
-      return dl;
+    //...
+
+    handleSubmit(event) {
+      event.preventDefault();
+      this.addSchedules();
     },
 
-    renderScheduleForm() {
-      let form = this.createScheduleForm();
-      let fieldset = this.createFieldSet();
-      let dl = this.createFieldInputs();
+    getScheduleIds(data) {
+      return Object.keys(data)
+                   .filter((key) => /^staffName-/.test(key))
+                   .map((key) => key.replace(/^staffName-/, ""));
     },
 
-    handleSubmit() {
-      alert("Submitting form");
+    formattedScheduleData(data, scheduleId) {
+      let pattern = new RegExp(`-${scheduleId}$`);
+      let keys = Object.keys(data).filter((key) => pattern.test(key));
+
+      return {
+        // eslint-disable-next-line camelcase
+        staff_id: data[keys.find((key) => /^staffName-/.test(key))],
+        date:     data[keys.find((key) => /^date-/.test(key))],
+        time:     data[keys.find((key) => /^time-/.test(key))],
+      };
     },
+
+    getFormDataAsJson() {
+      let formData = new FormData(this.form);
+
+      let schedules = Array.from(formData.entries());
+      let data = {};
+      schedules.forEach(([ key, value ]) => (data[key] = value));
+
+      let scheduleIds = this.getScheduleIds(data);
+      let json = { schedules: [] };
+      scheduleIds.forEach((scheduleId) => {
+        json.schedules.push(this.formattedScheduleData(data, scheduleId));
+      });
+
+      console.log(JSON.stringify(json));
+      return JSON.stringify(json);
+    },
+
+    addSchedules() {
+      let xhr = new XMLHttpRequest();
+
+      xhr.addEventListener("load", (_event) => {
+        if (xhr.status === 201) {
+          this.clearAllSchedules();
+          this.reset();
+        } else {
+          alert("Please check your inputs.");
+        }
+      });
+
+      xhr.addEventListener("error", this.gotError.bind(this));
+      xhr.addEventListener("timeout", this.timeout.bind(this));
+
+      xhr.open("POST", `${URL}${SCHEDULES}`);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.addEventListener("error", () => alert(ERROR_MESSAGE));
+      xhr.timeout = TIMEOUT_PERIOD;
+      xhr.responseType = "json";
+      xhr.send(this.getFormDataAsJson());
+    },
+
+    clearAllSchedules() {
+      this.schedules = [];
+      if (this.form) {
+        this.form
+            .querySelectorAll("fieldset")
+            .forEach((schedule) => this.form.removeChild(schedule));
+      }
+
+      return this;
+    },
+
+    reset() {
+      this.clearAllSchedules();
+    },
+
+    //...
 
     gotError() {
       alert(ERROR_MESSAGE);
     },
+
+    timeout() {
+      this.renderLine(TIMEOUT_MESSAGE);
+      this.done();
+    },
   };
 
   app.init();
-  // const GET_STAFF = "/api/staff_members";
-  // const TIMEOUT_PERIOD = 3000;
-  // const TIMEOUT_MESSAGE = "Timeout! Please try again.";
-  // const ALL_DONE = "All done.";
-  // const NO_SCHEDULES = "No schedules available for booking!";
-  //
-  // let ui = {
-  //   location: document.querySelector(UI),
-  //
-  //   clear() {
-  //     let ui = this.location;
-  //     while (ui.hasChildNodes()) {
-  //       this.clearNode(ui.firstChild);
-  //     }
-  //   },
-  //
-  //   clearNode(node) {
-  //     while (node.hasChildNodes()) {
-  //       this.clear(node.firstChild);
-  //     }
-  //
-  //     node.parentNode.removeChild(node);
-  //   },
-  //
-  //   done() {
-  //     this.renderLine(ALL_DONE);
-  //   },
-  //
-  //   render(schedules) {
-  //     this.clear();
-  //     this.renderSchedules(schedules);
-  //   },
-  //
-  //   renderLine(line) {
-  //     let item = document.createElement("p");
-  //     item.appendChild(document.createTextNode(line));
-  //     this.location.appendChild(item);
-  //   },
-  //
-  //   renderSchedules(schedules) {
-  //     schedules.forEach((schedule) => this.renderLine(schedule));
-  //   },
-  //
-  //   timeout() {
-  //     this.renderLine(TIMEOUT_MESSAGE);
-  //     this.done();
-  //   },
-  // };
-  //
-  // let store = {
-  //   bookings: [],
-  //
-  //   addBooking(bookingText) {
-  //     this.bookings.push(bookingText);
-  //   },
-  //
-  //   clear() {
-  //     this.bookings = [];
-  //   },
-  //
-  //   getBookings() {
-  //     return this.bookings.slice();
-  //   },
-  // };
-  //
-  // const reset = () => {
-  //   store.clear();
-  //   ui.clear();
-  // };
-  //
-  // const tallyResults = (schedules, staffMembers) => {
-  //   staffMembers.forEach((staff) => {
-  //     let staffSchedules = schedules.filter((schedule) => {
-  //       return schedule.staff_id === staff.id;
-  //     });
-  //
-  //     store.addBooking(`staff ${staff.id}: ${staffSchedules.length}`);
-  //   });
-  // };
-  //
-  // const requestStaffSchedules = (schedules) => {
-  //   if (schedules.length === 0) {
-  //     store.addBooking(NO_SCHEDULES);
-  //     return;
-  //   }
-  //
-  //   let xhr = new XMLHttpRequest();
-  //   xhr.addEventListener("load", () => {
-  //     tallyResults(schedules, xhr.response);
-  //     ui.render(store.getBookings());
-  //   });
-  //
-  //   xhr.addEventListener("error", gotError);
-  //   xhr.addEventListener("loadend", ui.done.bind(ui));
-  //
-  //   xhr.open("GET", `${URL}${GET_STAFF}`);
-  //   xhr.responseType = "json";
-  //   xhr.send();
-  // };
-  //
-  // const requestSchedules = () => {
-  //   reset();
-  //
-  //   let xhr = new XMLHttpRequest();
-  //   xhr.addEventListener("load", () => requestStaffSchedules(xhr.response));
-  //   xhr.addEventListener("error", gotError);
-  //   xhr.addEventListener("timeout", ui.timeout.bind(ui));
-  //
-  //   xhr.open("GET", `${URL}${GET_SCHEDULES}`);
-  //   xhr.timeout = TIMEOUT_PERIOD;
-  //   xhr.responseType = "json";
-  //   xhr.send();
-  // };
-  //
-  // requestSchedules();
 });
