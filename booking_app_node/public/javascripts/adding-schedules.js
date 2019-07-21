@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const FORM = "form";
   const ID_ADD_SCHEDULE = "add-schedule";
   const SCHEDULES = "/api/schedules";
-  const STAFF_MEMBETS = "/api/staff_members";
+  const STAFF_MEMBERS = "/api/staff_members";
   const SUBMIT = "Submit";
   const TIMEOUT_MESSAGE = "Timeout! Please try again.";
   const TIMEOUT_PERIOD = 3000;
@@ -13,23 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const URL = "http://greywolf:3000";
 
   let app = {
-    form:      null,
-    schedules: [],
-    submit:    null,
-    where:     document.querySelector(UI),
+    form:         null,
+    schedules:    [],
+    staffMembers: [],
+    submit:       null,
+    where:        document.querySelector(UI),
 
-    init(staffMembers) {
+    init() {
       let xhr = new XMLHttpRequest();
       xhr.addEventListener("load", (_event) => {
-        this.staffMembers = JSON.parse(xhr.request);
+        this.staffMembers = xhr.response;
         this.renderAddScheduleButton();
         this.renderForm();
         this.renderSubmitButton();
       });
 
-      xhr.addEventListener("error", this.gotError.bind(this));
+      xhr.addEventListener("error", () => alert(ERROR_MESSAGE));
 
-      xhr.open("GET", `${URL}${GET_STAFF}`);
+      xhr.open("GET", `${URL}${STAFF_MEMBERS}`);
       xhr.responseType = "json";
       xhr.send();
     },
@@ -62,7 +63,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderSubmitButton() {
       this.submit = this.createButton(SUBMIT);
-      this.submit.addEventListener("click", this.handleSubmit.bind(this));
+      this.submit.addEventListener("click", (event) => {
+        event.preventDefault();
+        this.addSchedules();
+      });
+
       this.submit.type = "submit";
       this.form.appendChild(this.submit);
       return this;
@@ -158,8 +163,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     createStaffNameWidget(name) {
       let select = this.createElement("select", { name: name });
-      select.appendChild(this.createOption(1, "First Prof"));
-      select.appendChild(this.createOption(2, "Second Prof"));
+      this.staffMembers.forEach(({ id, name }) => {
+        select.appendChild(this.createOption(id, name));
+      });
       return select;
     },
 
@@ -193,12 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     //...
 
-    handleSubmit(event) {
-      event.preventDefault();
-      this.addSchedules();
-    },
-
-    getScheduleIds(data) {
+    scheduleIds(data) {
       return Object.keys(data)
                    .filter((key) => /^staffName-/.test(key))
                    .map((key) => key.replace(/^staffName-/, ""));
@@ -208,28 +209,42 @@ document.addEventListener("DOMContentLoaded", () => {
       let pattern = new RegExp(`-${scheduleId}$`);
       let keys = Object.keys(data).filter((key) => pattern.test(key));
 
+      const dataFor = (fieldNamePattern) => {
+        let fieldName = keys.find((key) => fieldNamePattern.test(key));
+        return data[fieldName];
+      };
+
       return {
         // eslint-disable-next-line camelcase
-        staff_id: data[keys.find((key) => /^staffName-/.test(key))],
-        date:     data[keys.find((key) => /^date-/.test(key))],
-        time:     data[keys.find((key) => /^time-/.test(key))],
+        staff_id: dataFor(/^staffName-/),
+        date:     dataFor(/^date-/),
+        time:     dataFor(/^time-/),
       };
     },
 
-    getFormDataAsJson() {
+    formDataAsJson() {
       let formData = new FormData(this.form);
 
       let schedules = Array.from(formData.entries());
-      let data = {};
-      schedules.forEach(([ key, value ]) => (data[key] = value));
+      let data = schedules.reduce(
+        (object, [ key, value ]) => {
+          object[key] = value;
+          return object;
+        },
+        {}
+      );
 
-      let scheduleIds = this.getScheduleIds(data);
-      let json = { schedules: [] };
-      scheduleIds.forEach((scheduleId) => {
-        json.schedules.push(this.formattedScheduleData(data, scheduleId));
-      });
+      console.log(data);
+      let json = {
+        schedules: this.scheduleIds(data).reduce(
+          (accum, scheduleId) => {
+            accum.push(this.formattedScheduleData(data, scheduleId));
+            return accum;
+          },
+          []
+        ),
+      };
 
-      console.log(JSON.stringify(json));
       return JSON.stringify(json);
     },
 
@@ -239,21 +254,24 @@ document.addEventListener("DOMContentLoaded", () => {
       xhr.addEventListener("load", (_event) => {
         if (xhr.status === 201) {
           this.clearAllSchedules();
-          this.reset();
+          alert("Schedule(s) added");
         } else {
           alert("Please check your inputs.");
         }
       });
 
-      xhr.addEventListener("error", this.gotError.bind(this));
-      xhr.addEventListener("timeout", this.timeout.bind(this));
+      xhr.addEventListener("error", () => alert(ERROR_MESSAGE));
+      xhr.addEventListener("timeout", () => {
+        this.renderLine(TIMEOUT_MESSAGE);
+        this.done();
+      });
 
       xhr.open("POST", `${URL}${SCHEDULES}`);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.addEventListener("error", () => alert(ERROR_MESSAGE));
       xhr.timeout = TIMEOUT_PERIOD;
       xhr.responseType = "json";
-      xhr.send(this.getFormDataAsJson());
+      xhr.send(this.formDataAsJson());
     },
 
     clearAllSchedules() {
@@ -265,21 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       return this;
-    },
-
-    reset() {
-      this.clearAllSchedules();
-    },
-
-    //...
-
-    gotError() {
-      alert(ERROR_MESSAGE);
-    },
-
-    timeout() {
-      this.renderLine(TIMEOUT_MESSAGE);
-      this.done();
     },
   };
 
