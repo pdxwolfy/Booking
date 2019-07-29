@@ -1,0 +1,65 @@
+body {
+  box-sizing: border-box;
+  font-family: "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-size: 1.4rem;
+  padding: 1rem;
+}
+
+a {
+  color: #00b7ff;
+}
+
+button {
+  background-color: #64adda;
+  border-radius: 0.5rem;
+  color: white;
+  display: block;
+  font-size: 1.25rem;
+  padding: 1.5rem;
+  width: 10rem;
+}
+
+button[type="submit"] {
+  background-color: #d74250;
+}
+
+form {
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+fieldset {
+  border: 2px solid gray;
+  margin: 0.5rem 0;
+  padding: 1rem;
+  width: auto;
+}
+
+dl {
+  font-size: 0;
+  width: 20rem;
+}
+
+dt,
+dd {
+  display: inline-block;
+  font-size: 1.1rem;
+  vertical-align: middle;
+}
+
+dt {
+  text-align: right;
+  width: 10rem;
+}
+
+dd {
+  width: 10rem;
+}
+
+label {
+  color: red;
+  font: serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding-right: 0.5rem;
+}

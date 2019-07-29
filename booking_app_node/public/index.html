@@ -10,7 +10,73 @@
   <link href="stylesheets/style.css" rel="stylesheet">
 </head>
 <body>
-  <div id="main"></div>
-  <script src="javascripts/adding-schedules.js"></script>
+  <div id="main">
+    <form method="post" action="#" id="book-schedule">
+      <h1>Schedules</h1>
+      <fieldset>
+        <ul>
+          <li>
+            <label>
+              Please select one schedule:
+              <select name="schedule-id" id="schedule-id"></select>
+            </label>
+          </li>
+
+          <li>
+            <label>
+              Email:
+              <input type="text" name="student-email" id="student-email" />
+              <input type="submit" value="Submit" />
+            </label>
+          </li>
+        </ul>
+      </fieldset>
+    </form>
+
+    <form method="post" action="#" id="create-student" class="hidden">
+      <h1>Please provide new student details</h1>
+      <fieldset>
+        <ul>
+          <li>
+            <label>
+              Email:
+              <input
+                type="text"
+                name="new-student-email"
+                id="new-student-email"
+              />
+            </label>
+          </li>
+
+          <li>
+            <label>
+              Name:
+              <input
+                type="text"
+                name="new-student-name"
+                id="new-student-name"
+              />
+            </label>
+          </li>
+
+          <li>
+            <label>
+              Booking sequence:
+              <input
+                type="text"
+                name="booking-sequence"
+                id="booking-sequence"
+             />
+            </label>
+          </li>
+
+          <li>
+            <input type="submit" value="Submit" />
+          </li>
+        </ul>
+      </fieldset>
+    </form>
+  </div>
+  <script src="javascripts/booking_time_slots.js"></script>
 </body>
 </html>

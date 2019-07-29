@@ -151,6 +151,7 @@ rules:
       caughtErrors: all
       caughtErrorsIgnorePattern: "^_"
       vars: local
+      varsIgnorePattern: "^_"
   no-use-before-define:
     - error
     - functions: false
